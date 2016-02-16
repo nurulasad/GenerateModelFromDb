@@ -34,12 +34,12 @@ namespace ConsoleApplication1
 
             for (var i = 0; i < names.Count; i++)
             {
-                if (i == 1)
-                    break;
+                //if (i == 1)
+                //    break;
 
                 var tableName = names[i].Name;
 
-                tableName = "tblParts";
+                //tableName = "tblParts";
 
 
 
@@ -54,11 +54,11 @@ namespace ConsoleApplication1
                     columns = context.Database.SqlQuery<ColumnDefinition>(commandText).ToList();
 
                 }
-
+                var directoryName = "ViewModels";
                 var fileName = tableName + ".cs";
                 if (File.Exists(fileName))
                 {
-                    File.Delete(fileName);
+                    File.Delete(directoryName+"/"+ fileName);
                 }
                 //var file = File.Create(fileName);
 
@@ -115,7 +115,7 @@ namespace ConsoleApplication1
                     if (j > columns.Count - 2)
                         lineDelimeter = string.Empty;
 
-                    lines.Add(current.Column + " = " + publicClassName.ToLower() + "." + SanitizeColumnNameForAppModel(current.Column) + lineDelimeter);
+                    lines.Add(SanitizeColumnNameForDataModel(current.Column) + " = " + publicClassName.ToLower() + "." + SanitizeColumnNameForAppModel(current.Column) + lineDelimeter);
 
                 }
                 lines.Add("};");
@@ -133,7 +133,9 @@ namespace ConsoleApplication1
                 lines.Add("}");
                 lines.Add("}");
 
-                System.IO.File.WriteAllLines(fileName, lines.ToArray());
+                
+                Directory.CreateDirectory(directoryName);
+                System.IO.File.WriteAllLines(directoryName+"/" +fileName, lines.ToArray());
 
 
 
@@ -179,8 +181,39 @@ namespace ConsoleApplication1
             {
                 appDataType = "byte[]";
             }
+
+            // dummy data below
+            else if (dbDataType == "float")
+            {
+                appDataType = "float";
+            }
+            else if (dbDataType == "tinyint")
+            {
+                appDataType = "short";
+            }
+            else if (dbDataType == "varbinary")
+            {
+                appDataType = "byte[]";
+            }
+            else if (dbDataType == "bigint")
+            {
+                appDataType = "long";
+            }
+            else if (dbDataType == "varchar")
+            {
+                appDataType = "varchar";
+            }
+            else if (dbDataType == "date")
+            {
+                appDataType = "date";
+            }
+            else if (dbDataType == "time")
+            {
+                appDataType = "time";
+            }
             else
             {
+                //undefineDataList += dbDataType+",";
                 throw new Exception("Undefined conversion : " + dbDataType);
             }
 
@@ -193,12 +226,24 @@ namespace ConsoleApplication1
             return appDataType;
         }
 
+        private static string undefineDataList = string.Empty;
+
         private static string SanitizeColumnNameForAppModel(string columnName)
         {
             var sanitizedName = columnName;
             if (columnName.EndsWith("%"))
             {
                 sanitizedName = sanitizedName.TrimEnd("%".ToCharArray()) + "Percentage";
+            }
+            return sanitizedName;
+        }
+
+        private static string SanitizeColumnNameForDataModel(string columnName)
+        {
+            var sanitizedName = columnName;
+            if (columnName.EndsWith("%"))
+            {
+                sanitizedName = sanitizedName.TrimEnd("%".ToCharArray()) + "_";
             }
             return sanitizedName;
         }
