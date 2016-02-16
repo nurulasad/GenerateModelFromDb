@@ -45,7 +45,7 @@ namespace ConsoleApplication1
 
 
 
-                var commandText = "select t.name [Table] ,c.name [Column] ,c2.data_type  [DataType], c2.IS_NULLABLE [IsNullable] from sys.columns c inner join sys.tables t  on t.object_id = c.object_id inner join INFORMATION_SCHEMA.COLUMNS c2 on (c.name = c2.COLUMN_NAME and t.name = c2.TABLE_NAME) where t.name = '" + tableName + "' and t.type = 'U'";
+                var commandText = "select t.name [Table] ,c.name [Column] ,c2.data_type  [DataType], c2.IS_NULLABLE [IsNullable] from sys.columns c inner join sys.tables t  on t.object_id = c.object_id inner join INFORMATION_SCHEMA.COLUMNS c2 on (c.name = c2.COLUMN_NAME and t.name = c2.TABLE_NAME) where t.name = '" + tableName + "' and t.type = 'U' order by t.name,c.column_id";
 
 
                 var columns = new List<ColumnDefinition>();
@@ -62,35 +62,89 @@ namespace ConsoleApplication1
                 }
                 //var file = File.Create(fileName);
 
-                var  lines = new List<string>();
+                var publicClassName = tableName.TrimStart("tbl".ToCharArray()).TrimEnd("s".ToCharArray());
+                var lines = new List<string>();
                 lines.Add("using PCS.DataModel;");
                 lines.Add("using System;");
                 lines.Add("namespace PCS.WebAPI.ViewModel");
                 lines.Add("{");
-                lines.Add("public class " + tableName);
+                lines.Add("public class " + publicClassName);
                 lines.Add("{");
 
                 for (var j = 0; j < columns.Count; j++)
                 {
                     var current = columns[j];
-                    lines.Add("public " + GetApplicationDataType(current.DataType,current.IsNullable) + " " + current.Column + " { get; set; }");
-                    
-                }
-                    // WriteAllLines creates a file, writes a collection of strings to the file,
-                    // and then closes the file.  You do NOT need to call Flush() or Close().
-                    System.IO.File.WriteAllLines(fileName, lines.ToArray());
-                
+                    lines.Add("public " + GetApplicationDataType(current.DataType, current.IsNullable) + " " + SanitizeColumnNameForAppModel(current.Column) + " { get; set; }");
 
+                }
+
+
+
+                lines.Add("public static explicit operator Part(tbl" + publicClassName + " " + publicClassName.ToLower() + ")");
+                lines.Add("{");
+
+                lines.Add("return new " + publicClassName);
+                lines.Add("{");
+
+                for (var j = 0; j < columns.Count; j++)
+                {
+                    var current = columns[j];
+
+                    var lineDelimeter = ",";
+                    if (j > columns.Count - 2)
+                        lineDelimeter = string.Empty;
+
+                    lines.Add(SanitizeColumnNameForAppModel(current.Column) + " = " + publicClassName.ToLower() + "." + current.Column + lineDelimeter);
+
+                }
+
+                lines.Add("};");
+
+                lines.Add("}");
+
+                //conversion 2
+                lines.Add("public static explicit operator tbl" + publicClassName + "("+ publicClassName + " " + publicClassName.ToLower() + ")");
+                lines.Add("{");
+                lines.Add("return new " + publicClassName.ToLower());
+                lines.Add("{");
+                for (var j = 0; j < columns.Count; j++)
+                {
+                    var current = columns[j];
+
+                    var lineDelimeter = ",";
+                    if (j > columns.Count - 2)
+                        lineDelimeter = string.Empty;
+
+                    lines.Add(current.Column + " = " + publicClassName.ToLower() + "." + SanitizeColumnNameForAppModel(current.Column) + lineDelimeter);
+
+                }
+                lines.Add("};");
+
+                lines.Add("}");
+
+                //conversion 3
+                lines.Add("public static "+ publicClassName + " toModel(tbl"+ publicClassName +" "+ publicClassName.ToLower()+")");
+                lines.Add("{");
+                lines.Add("return (" + publicClassName + ")" + publicClassName.ToLower() + ";");
+                lines.Add("}");
+
+
+
+                lines.Add("}");
+                lines.Add("}");
+
+                System.IO.File.WriteAllLines(fileName, lines.ToArray());
 
 
 
             }
 
-
+            Console.WriteLine("Press any key ...");
             Console.ReadKey();
         }
 
-        private static string GetApplicationDataType(string dbDataType, string isNullable) {
+        private static string GetApplicationDataType(string dbDataType, string isNullable)
+        {
             var appDataType = string.Empty;
 
             if (dbDataType == "int")
@@ -130,13 +184,23 @@ namespace ConsoleApplication1
                 throw new Exception("Undefined conversion : " + dbDataType);
             }
 
-            if(isNullable == "YES")
+            if (isNullable == "YES")
             {
                 appDataType += "?";
             }
 
 
             return appDataType;
+        }
+
+        private static string SanitizeColumnNameForAppModel(string columnName)
+        {
+            var sanitizedName = columnName;
+            if (columnName.EndsWith("%"))
+            {
+                sanitizedName = sanitizedName.TrimEnd("%".ToCharArray()) + "Percentage";
+            }
+            return sanitizedName;
         }
     }
 
