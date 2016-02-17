@@ -55,14 +55,16 @@ namespace ConsoleApplication1
 
                 }
                 var directoryName = "ViewModels";
-                var fileName = tableName + ".cs";
+                var publicClassName = tableName.TrimStart("tbl".ToCharArray()).TrimEnd("s".ToCharArray());
+
+                var fileName = publicClassName + ".cs";
                 if (File.Exists(fileName))
                 {
                     File.Delete(directoryName+"/"+ fileName);
                 }
                 //var file = File.Create(fileName);
 
-                var publicClassName = tableName.TrimStart("tbl".ToCharArray()).TrimEnd("s".ToCharArray());
+                
                 var lines = new List<string>();
                 lines.Add("using PCS.DataModel;");
                 lines.Add("using System;");
@@ -80,7 +82,7 @@ namespace ConsoleApplication1
 
 
 
-                lines.Add("public static explicit operator Part(tbl" + publicClassName + " " + publicClassName.ToLower() + ")");
+                lines.Add("public static explicit operator " + publicClassName + "(tbl" + publicClassName + " " + publicClassName.ToLower() + ")");
                 lines.Add("{");
 
                 lines.Add("return new " + publicClassName);
@@ -175,7 +177,7 @@ namespace ConsoleApplication1
             }
             else if (dbDataType == "bit")
             {
-                appDataType = "boolean";
+                appDataType = "bool";
             }
             else if (dbDataType == "timestamp")
             {
@@ -217,10 +219,14 @@ namespace ConsoleApplication1
                 throw new Exception("Undefined conversion : " + dbDataType);
             }
 
-            if (isNullable == "YES")
+            if (appDataType != "string")
             {
-                appDataType += "?";
+                if (isNullable == "YES")
+                {
+                    appDataType += "?";
+                }
             }
+            
 
 
             return appDataType;
