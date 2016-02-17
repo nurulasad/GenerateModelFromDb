@@ -80,7 +80,7 @@ namespace ConsoleApplication1
 
                 }
 
-
+                //conversion 1
 
                 lines.Add("public static explicit operator " + publicClassName + "(tbl" + publicClassName + " " + publicClassName.ToLower() + ")");
                 lines.Add("{");
@@ -96,7 +96,7 @@ namespace ConsoleApplication1
                     if (j > columns.Count - 2)
                         lineDelimeter = string.Empty;
 
-                    lines.Add(SanitizeColumnNameForAppModel(current.Column) + " = " + publicClassName.ToLower() + "." + current.Column + lineDelimeter);
+                    lines.Add(SanitizeColumnNameForAppModel(current.Column) + " = " + publicClassName.ToLower() + "." + SanitizeColumnNameForDataModel(current.Column) + lineDelimeter);
 
                 }
 
@@ -107,7 +107,7 @@ namespace ConsoleApplication1
                 //conversion 2
                 lines.Add("public static explicit operator tbl" + publicClassName + "("+ publicClassName + " " + publicClassName.ToLower() + ")");
                 lines.Add("{");
-                lines.Add("return new " + publicClassName.ToLower());
+                lines.Add("return new tbl" + publicClassName);
                 lines.Add("{");
                 for (var j = 0; j < columns.Count; j++)
                 {
@@ -183,12 +183,13 @@ namespace ConsoleApplication1
             {
                 appDataType = "byte[]";
             }
-
-            // dummy data below
             else if (dbDataType == "float")
             {
-                appDataType = "float";
+                appDataType = "double";
             }
+
+            // dummy data below
+
             else if (dbDataType == "tinyint")
             {
                 appDataType = "short";
