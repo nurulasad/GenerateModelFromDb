@@ -240,7 +240,7 @@ namespace ConsoleApplication1
             var sanitizedName = columnName;
             if (columnName.EndsWith("%"))
             {
-                sanitizedName = sanitizedName.TrimEnd("%".ToCharArray()) + "Percentage";
+                sanitizedName = sanitizedName.TrimEnd("%".ToCharArray()) + "Percent";
             }
             return sanitizedName;
         }
